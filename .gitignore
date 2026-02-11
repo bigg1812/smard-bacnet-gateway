@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+venv/
+.venv/
+env/
+
+# Logs (werden lokal erzeugt, nicht ins Repo)
+logs/*.log
+logs/*.log.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# macOS
+.DS_Store
+
+# Konfiguration mit lokalen Anpassungen
+# (einstellungen.ini ist im Repo als Vorlage,
+#  lokale Aenderungen NICHT committen)
