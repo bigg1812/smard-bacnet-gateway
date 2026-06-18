@@ -1,37 +1,35 @@
 # Schritt 3: Controller einrichten
 
-## Analog Values anlegen
+## BACnet-Objekte anlegen
 
-Im Controller (via enteliWEB oder CopperCube) müssen **26 Analog
-Values** angelegt werden:
+Im Controller (via enteliWEB oder CopperCube) müssen **1 Analog Value (AV)** und **1 Binary Value (BV)** angelegt werden:
 
-| AV-Instanz | Name (Vorschlag)    | Beschreibung                   |
-|------------|---------------------|---------------------------------|
-| AV:1000    | Strompreis_Aktuell  | Preis der aktuellen Stunde      |
-| AV:1001    | Preis_Morgen_00     | Morgen 00:00-01:00 Uhr          |
-| AV:1002    | Preis_Morgen_01     | Morgen 01:00-02:00 Uhr          |
-| AV:1003    | Preis_Morgen_02     | Morgen 02:00-03:00 Uhr          |
-| ...        | ...                 | ...                             |
-| AV:1023    | Preis_Morgen_22     | Morgen 22:00-23:00 Uhr          |
-| AV:1024    | Preis_Morgen_23     | Morgen 23:00-00:00 Uhr          |
-| AV:1025    | Preis_Status        | Watchdog (Anzahl Preise: 0-24)  |
+| Objekt-Instanz | Name (Vorschlag)    | Beschreibung                                               |
+|----------------|---------------------|------------------------------------------------------------|
+| AV:1000        | Strompreis_Aktuell  | Preis der aktuellen Stunde (Analog Value)                  |
+| BV:1025        | Strompreis_Status   | Watchdog/Status (Binary Value, 1 = Ok/Aktiv, 0 = Fehler)   |
 
-### Einstellungen pro AV:
+### Einstellungen pro Objekt:
 
-- **Object Type:** Analog Value
-- **Units:** No Units (oder custom "ct/kWh")
-- **Relinquish Default:** 0.0
-- **Out of Service:** False
-- **Wichtig:** Kein Override auf Priority 1-13!
+- **AV:1000 (Analog Value):**
+  - **Object Type:** Analog Value
+  - **Units:** No Units (oder custom "ct/kWh")
+  - **Relinquish Default:** 0.0
+  - **Out of Service:** False
+  - **Wichtig:** Kein Override auf Priority 1-13!
+
+- **BV:1025 (Binary Value):**
+  - **Object Type:** Binary Value
+  - **Relinquish Default:** 0 (Inactive)
+  - **Out of Service:** False
+  - **Wichtig:** Kein Override auf Priority 1-13!
 
 ### Was bedeutet der Fehlwert -1.0?
 
-Wenn für eine Stunde kein Preis verfügbar ist (z.B. Feiertag oder
-API-Problem), wird **-1.0** geschrieben. Deine Steuerungsprogramme
-können darauf prüfen:
+Wenn für den aktuellen Preis kein Wert verfügbar ist (z.B. bei API-Problemen), wird **-1.0** auf das AV geschrieben. Deine Steuerungsprogramme können darauf prüfen:
 
 ```
-WENN Preis_Morgen_00 < 0 DANN
+WENN Strompreis_Aktuell < 0 DANN
   → Kein gültiger Preis, Standard-Fahrplan nutzen
 ```
 

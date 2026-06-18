@@ -65,14 +65,16 @@ AV:1000 = 11.67 ct/kWh
 
 Prüfe in enteliWEB: AV:1000 sollte jetzt 11.67 anzeigen.
 
-## 3. Morgen-Preise testen
+## 3. Morgen-Preise (Status) testen
 
 ```
 python src/strompreis_bacnet.py --modus morgen
 ```
 
+Schreibt den Status der morgigen Preise auf `BV:1025` (`1` = Preise für morgen geladen, `0` = noch nicht vorhanden).
+
 **Hinweis:** Morgen-Preise sind erst ab ca. 13:00 Uhr verfügbar!
-Vorher kommt die Meldung "KEINE Preise fuer morgen".
+Vorher wird `0` geschrieben und die Warnung "KEINE Preise fuer morgen" protokolliert.
 
 ## 4. Alles zusammen
 

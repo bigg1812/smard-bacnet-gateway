@@ -13,9 +13,7 @@ via **BACnet/IP** in einen Gebäudeautomations-Controller.
  │  (Bundes-  │  Strompreise  │ Skript │  │  (z.B. EBcon)   │
  │  netzagen- │  EUR/MWh      │        │  │                 │
  │  tur)      │               │  PC    │  │  AV:1000 = 11.67│
- └────────────┘               └────────┘  │  AV:1001 = 8.42 │
-                                          │  AV:1002 = 7.35  │
-                                          │  ...             │
+ └────────────┘               └────────┘  │  BV:1025 = 1    │
                                           └─────────────────┘
 ```
 
@@ -23,8 +21,7 @@ via **BACnet/IP** in einen Gebäudeautomations-Controller.
 
 1. **Ruft Strompreise ab** von der SMARD-Plattform der Bundesnetzagentur
 2. **Schreibt den aktuellen Preis** in ein konfigurierbares Analog Value (z.B. `AV:1000`)
-3. **Schreibt 24 Stundenpreise für morgen** in aufeinanderfolgende AVs (z.B. `AV:1001` bis `AV:1024`)
-4. **Schreibt einen Status** in ein weiteres AV (z.B. `AV:1025`) als Watchdog
+3. **Schreibt den Status für morgen** (ob Preise für morgen vorliegen und das System ok ist) in ein Binary Value (z.B. `BV:1025`)
 
 Die Preise stehen dann im Controller für Steuerungsprogramme zur
 Verfügung – z.B. um ein BHKW, Wärmepumpen oder Batteriespeicher zu optimieren.
@@ -100,10 +97,8 @@ controller_ip = 192.168.1.100   ← Ersetze durch IP deines Controllers
 local_ip      = 192.168.1.50    ← Ersetze durch IP deines PCs
 
 [bacnet_objekte]
-av_aktuell      = 1000          ← Ersetze durch deine AV-Instanznummern
-av_morgen_start = 1001          ← (26 aufeinanderfolgende AVs benötigt)
-av_morgen_ende  = 1024
-av_status       = 1025
+av_aktuell      = 1000          ← Ersetze durch deine AV-Instanznummer
+bv_status       = 1025          ← Ersetze durch deine BV-Instanznummer
 
 [einheiten]
 faktor = 0.1                    ← 0.1 = ct/kWh, 1.0 = EUR/MWh
@@ -112,7 +107,7 @@ faktor = 0.1                    ← 0.1 = ct/kWh, 1.0 = EUR/MWh
 **Du benötigst:**
 - ✅ Die IP-Adresse deines BACnet-Controllers
 - ✅ Die IP-Adresse des PCs auf dem das Skript läuft
-- ✅ 26 freie AV-Instanznummern im Controller
+- ✅ 1 freie AV-Instanznummer und 1 freie BV-Instanznummer im Controller
 
 **Wo finde ich diese Informationen?** → Siehe [KONFIGURATION.md](KONFIGURATION.md)
 

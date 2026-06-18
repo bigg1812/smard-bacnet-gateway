@@ -56,7 +56,7 @@ Falls du den aktuellen Preis jede Stunde aktualisieren möchtest:
 
 1. In der Aufgabenplanung: Rechtsklick auf den Task → **"Ausführen"**
 2. Log prüfen: `C:\smard-bacnet-gateway\logs\strompreis.log`
-3. In enteliWEB prüfen: AV:1000 sollte aktuellen Preis zeigen
+3. In enteliWEB prüfen: AV:1000 sollte den aktuellen Preis zeigen, und BV:1025 sollte den Status 1 (Ok) zeigen.
 
 ## Fertig!
 

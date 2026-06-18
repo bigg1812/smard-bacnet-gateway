@@ -62,16 +62,14 @@ local_ip        = 192.168.1.50     ← Ersetze durch IP dieses PCs
 local_port      = 47809
 
 [bacnet_objekte]
-av_aktuell      = 1000             ← Ersetze durch deine AV-Nummern
-av_morgen_start = 1001
-av_morgen_ende  = 1024
-av_status       = 1025
+av_aktuell      = 1000             ← Ersetze durch deine AV-Nummer
+bv_status       = 1025             ← Ersetze durch deine BV-Nummer
 ```
 
 **Wie finde ich die Werte?**
 - **Controller-IP:** In enteliWEB oder beim Netzwerk-Admin
 - **PC-IP:** CMD öffnen → `ipconfig` eingeben
-- **AV-Nummern:** Freie Analog Values im Controller (26 Stück benötigt)
+- **Objekt-Nummern:** 1 freies Analog Value (AV) und 1 freies Binary Value (BV) im Controller
 
 **Tipp:** Die restlichen Einstellungen können erstmal so bleiben.
 

@@ -77,9 +77,7 @@ def load_config():
         "local_port":      cp.getint("netzwerk", "local_port"),
         # BACnet Objekte
         "av_aktuell":      cp.getint("bacnet_objekte", "av_aktuell"),
-        "av_morgen_start": cp.getint("bacnet_objekte", "av_morgen_start"),
-        "av_morgen_ende":  cp.getint("bacnet_objekte", "av_morgen_ende"),
-        "av_status":       cp.getint("bacnet_objekte", "av_status"),
+        "bv_status":       cp.getint("bacnet_objekte", "bv_status", fallback=cp.getint("bacnet_objekte", "av_status", fallback=1025)),
         "priority":        cp.getint("bacnet_objekte", "priority"),
         "fehlwert":        cp.getfloat("bacnet_objekte", "fehlwert"),
         # SMARD
@@ -313,19 +311,28 @@ def get_tomorrow_prices(log):
 # ════════════════════════════════════════════════════════════════
 
 OBJ_TYPE_AV = 2
+OBJ_TYPE_BV = 5
 PROP_PV = 85
 
 
-def _pkt_write(instance, value, priority, invoke_id):
-    """Baut WriteProperty-Paket."""
+def _pkt_write(obj_type, instance, value, priority, invoke_id):
+    """Baut WriteProperty-Paket fuer AV (Real/Float) oder BV (Enumerated)."""
     apdu = bytearray([0x00, 0x04, invoke_id & 0xFF, 0x0F])
-    oid = (OBJ_TYPE_AV << 22) | instance
+    oid = (obj_type << 22) | instance
     apdu.append(0x0C)
     apdu.extend(struct.pack(">I", oid))
     apdu.extend([0x19, PROP_PV])
     apdu.append(0x3E)
-    apdu.append(0x44)
-    apdu.extend(struct.pack(">f", value))
+    
+    if obj_type == OBJ_TYPE_BV:
+        # Enumerated (Tag 9) fuer BV Present_Value
+        apdu.append(0x91)
+        apdu.append(int(value) & 0xFF)
+    else:
+        # Real/Float (Tag 4) fuer AV Present_Value
+        apdu.append(0x44)
+        apdu.extend(struct.pack(">f", float(value)))
+        
     apdu.append(0x3F)
     apdu.extend([0x49, priority & 0xFF])
     npdu = bytes([0x01, 0x04])
@@ -333,10 +340,10 @@ def _pkt_write(instance, value, priority, invoke_id):
     return bvlc + npdu + bytes(apdu)
 
 
-def _pkt_read(instance, invoke_id):
+def _pkt_read(obj_type, instance, invoke_id):
     """Baut ReadProperty-Paket."""
     apdu = bytearray([0x00, 0x04, invoke_id & 0xFF, 0x0C])
-    oid = (OBJ_TYPE_AV << 22) | instance
+    oid = (obj_type << 22) | instance
     apdu.append(0x0C)
     apdu.extend(struct.pack(">I", oid))
     apdu.extend([0x19, PROP_PV])
@@ -367,13 +374,25 @@ def _is_ack(data):
     return data and len(data) >= 9 and (data[6] >> 4) == 2 and data[8] == 0x0F
 
 
-def _read_float(data):
-    """Extrahiert Float aus ReadProperty-Antwort."""
+def _read_value(data):
+    """Extrahiert Float (AV) oder Int (BV) aus ReadProperty-Antwort."""
     if not data:
         return None
-    for i in range(len(data) - 6):
-        if data[i] == 0x3E and data[i+1] == 0x44 and data[i+6] == 0x3F:
-            return round(struct.unpack(">f", data[i+2:i+6])[0], 4)
+    for i in range(len(data) - 2):
+        if data[i] == 0x3E:  # Opening tag
+            for j in range(i + 2, len(data)):
+                if data[j] == 0x3F:  # Closing tag
+                    tag_byte = data[i+1]
+                    val_bytes = data[i+2:j]
+                    tag_num = tag_byte >> 4
+                    is_app_tag = (tag_byte & 0x08) == 0
+                    if is_app_tag:
+                        if tag_num == 4 and len(val_bytes) == 4:  # Real/Float
+                            return round(struct.unpack(">f", val_bytes)[0], 4)
+                        elif tag_num == 9 and len(val_bytes) == 1:  # Enumerated
+                            return int(val_bytes[0])
+                        elif tag_num == 2 and len(val_bytes) == 1:  # Unsigned
+                            return int(val_bytes[0])
     return None
 
 
@@ -421,22 +440,23 @@ class BACnetConnection:
             self.sock.close()
             self.log.debug("Socket geschlossen")
 
-    def write(self, instance, value, invoke_id=1):
+    def write(self, obj_type, instance, value, invoke_id=1):
         """
-        Schreibt einen Wert auf AV:instance.
+        Schreibt einen Wert auf AV:instance (Float) oder BV:instance (Enumerated).
         Versucht mehrfach bei Timeout.
         Gibt True/False zurueck.
         """
         for attempt in range(1, CFG["bacnet_retries"] + 1):
             iid = (invoke_id + attempt) & 0xFF
-            pkt = _pkt_write(instance, value, CFG["priority"], iid)
+            pkt = _pkt_write(obj_type, instance, value, CFG["priority"], iid)
             self.sock.sendto(pkt, self.target)
 
             data = _recv(self.sock)
+            type_str = "BV" if obj_type == OBJ_TYPE_BV else "AV"
 
             if data is None:
                 self.log.warning(
-                    f"  AV:{instance} Timeout "
+                    f"  {type_str}:{instance} Timeout "
                     f"({attempt}/{CFG['bacnet_retries']})"
                 )
                 if attempt < CFG["bacnet_retries"]:
@@ -444,26 +464,28 @@ class BACnetConnection:
                 continue
 
             if _is_ack(data):
-                self.log.debug(f"  AV:{instance} = {value:.4f} OK")
+                val_str = f"{value}" if obj_type == OBJ_TYPE_BV else f"{value:.4f}"
+                self.log.debug(f"  {type_str}:{instance} = {val_str} OK")
                 return True
 
             self.log.warning(
-                f"  AV:{instance} Fehler: {_error_text(data)}"
+                f"  {type_str}:{instance} Fehler: {_error_text(data)}"
             )
             return False
 
+        type_str = "BV" if obj_type == OBJ_TYPE_BV else "AV"
         self.log.error(
-            f"  AV:{instance} FEHLGESCHLAGEN "
+            f"  {type_str}:{instance} FEHLGESCHLAGEN "
             f"nach {CFG['bacnet_retries']} Versuchen"
         )
         return False
 
-    def read(self, instance, invoke_id=200):
-        """Liest presentValue von AV:instance. Gibt float oder None."""
-        pkt = _pkt_read(instance, invoke_id & 0xFF)
+    def read(self, obj_type, instance, invoke_id=200):
+        """Liest presentValue von obj_type:instance. Gibt Wert (float/int) oder None."""
+        pkt = _pkt_read(obj_type, instance, invoke_id & 0xFF)
         self.sock.sendto(pkt, self.target)
         data = _recv(self.sock)
-        return _read_float(data) if data else None
+        return _read_value(data) if data else None
 
 
 # ════════════════════════════════════════════════════════════════
@@ -474,7 +496,7 @@ def run_aktuell(conn, log):
     """Schreibt aktuellen Preis auf AV:1000."""
     log.info("── Aktuellen Preis abrufen ──")
     raw, conv, dt = get_current_price(log)
-    ok = conn.write(CFG["av_aktuell"], conv, invoke_id=100)
+    ok = conn.write(OBJ_TYPE_AV, CFG["av_aktuell"], conv, invoke_id=100)
     if ok:
         log.info(f"AV:{CFG['av_aktuell']} = {conv:.2f} {CFG['price_unit']}")
     else:
@@ -483,31 +505,31 @@ def run_aktuell(conn, log):
 
 
 def run_morgen(conn, log):
-    """Schreibt 24 Morgen-Preise + Status."""
-    log.info("── Morgen-Preise abrufen ──")
-    prices = get_tomorrow_prices(log)
-
-    log.info("── Schreibe in Controller ──")
-    erfolg = 0
-    vorhanden = 0
-
-    for hour, price in prices:
-        av = CFG["av_morgen_start"] + hour
-        if price is not None:
-            value = price
-            vorhanden += 1
+    """Prueft ob die Preise fuer morgen vorliegen und schreibt den Status auf BV:status."""
+    log.info("── Status der Morgen-Preise pruefen ──")
+    status_ok = False
+    try:
+        prices = get_tomorrow_prices(log)
+        vorhanden = sum(1 for hour, price in prices if price is not None)
+        if vorhanden == 24:
+            log.info("Alle 24 Preise fuer morgen erfolgreich geladen.")
+            status_ok = True
         else:
-            value = CFG["fehlwert"]
+            log.warning(f"Es liegen nur {vorhanden}/24 Preise fuer morgen vor.")
+    except Exception as e:
+        log.error(f"Fehler beim Laden der Morgen-Preise: {e}")
+        status_ok = False
 
-        if conn.write(av, value, invoke_id=hour + 1):
-            erfolg += 1
-        time.sleep(CFG["write_delay"])
-
-    # Status/Watchdog
-    conn.write(CFG["av_status"], float(vorhanden), invoke_id=50)
-
-    log.info(f"Ergebnis: {erfolg}/24 geschrieben, {vorhanden}/24 Preise vorhanden")
-    return erfolg == 24 and vorhanden > 0
+    # Wert fuer BV bestimmen (1.0 = Aktiv/True, 0.0 = Inaktiv/False)
+    val = 1.0 if status_ok else 0.0
+    log.info(f"Schreibe Status auf BV:{CFG['bv_status']} = {val}")
+    ok = conn.write(OBJ_TYPE_BV, CFG["bv_status"], val, invoke_id=50)
+    if ok:
+        log.info(f"BV:{CFG['bv_status']} erfolgreich geschrieben.")
+    else:
+        log.error(f"BV:{CFG['bv_status']} Schreiben fehlgeschlagen.")
+    
+    return ok
 
 
 def main():
@@ -521,7 +543,7 @@ def main():
         "--modus",
         choices=["aktuell", "morgen", "alle"],
         default="alle",
-        help="aktuell=AV:1000, morgen=AV:1001-1025, alle=beides (Standard)",
+        help="aktuell=AV:aktuell, morgen=BV:status (Preise für morgen da?), alle=beides (Standard)",
     )
     args = parser.parse_args()
 
@@ -536,18 +558,31 @@ def main():
     exit_code = 0
     try:
         with BACnetConnection(log) as conn:
-            if args.modus in ("aktuell", "alle"):
-                if not run_aktuell(conn, log):
-                    exit_code = max(exit_code, 3)
+            try:
+                if args.modus in ("aktuell", "alle"):
+                    if not run_aktuell(conn, log):
+                        exit_code = max(exit_code, 3)
+                        # Wenn die Aktualisierung des aktuellen Preises fehlschlaegt,
+                        # setzen wir den Status auf 0 (Fehler)
+                        conn.write(OBJ_TYPE_BV, CFG["bv_status"], 0.0, invoke_id=99)
 
-            if args.modus in ("morgen", "alle"):
-                if not run_morgen(conn, log):
-                    exit_code = max(exit_code, 3)
+                if args.modus in ("morgen", "alle"):
+                    if not run_morgen(conn, log):
+                        exit_code = max(exit_code, 3)
+            except (requests.RequestException, ValueError) as api_err:
+                log.error(f"Fehler bei der SMARD-API-Abfrage: {api_err}")
+                # Im Fehlerfall versuchen wir den Fehlerstatus (0.0) an den Controller zu uebertragen
+                conn.write(OBJ_TYPE_BV, CFG["bv_status"], 0.0, invoke_id=99)
+                raise
 
             # Verifikation
-            rb = conn.read(CFG["av_aktuell"])
+            rb = conn.read(OBJ_TYPE_AV, CFG["av_aktuell"])
             if rb is not None:
                 log.info(f"Verifikation AV:{CFG['av_aktuell']} = {rb}")
+
+            rb_status = conn.read(OBJ_TYPE_BV, CFG["bv_status"])
+            if rb_status is not None:
+                log.info(f"Verifikation BV:{CFG['bv_status']} = {rb_status}")
 
     except ConnectionError as e:
         log.error(f"BACnet: {e}")

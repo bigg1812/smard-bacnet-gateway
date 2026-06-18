@@ -54,40 +54,29 @@ local_ip        = 10.20.30.99
 
 ```ini
 av_aktuell      = 1000    ← PLATZHALTER
-av_morgen_start = 1001    ← PLATZHALTER
-av_morgen_ende  = 1024    ← PLATZHALTER
-av_status       = 1025    ← PLATZHALTER
+bv_status       = 1025    ← PLATZHALTER
 priority        = 14
 fehlwert        = -1.0
 ```
 
 **Was du brauchst:**
 
-Du musst **26 freie Analog Values** im Controller anlegen (siehe [03_CONTROLLER_EINRICHTEN.md](setup_guide/03_CONTROLLER_EINRICHTEN.md)).
+Du musst **1 Analog Value (AV)** und **1 Binary Value (BV)** im Controller anlegen.
 
 | Platzhalter | Ersetzen durch | Beschreibung |
 |-------------|----------------|--------------|
-| `1000` | Deine AV-Instanznummer | Für den aktuellen Strompreis |
-| `1001` | Deine AV-Instanznummer | Erste Stunde morgen (00:00) |
-| `1024` | Deine AV-Instanznummer | Letzte Stunde morgen (23:00) |
-| `1025` | Deine AV-Instanznummer | Status/Watchdog |
-
-**Wichtig:** Die Nummern müssen **aufeinanderfolgend** sein!
-- Wenn `av_morgen_start = 2000`, dann muss `av_morgen_ende = 2023` sein (24 Stunden)
+| `1000` | Deine AV-Instanznummer | Für den aktuellen Strompreis (Analog Value) |
+| `1025` | Deine BV-Instanznummer | Status/Watchdog (Binary Value, 1=Ok, 0=Fehler/Fehlend) |
 
 **Beispiel:**
 ```ini
 # Vorher (Platzhalter):
 av_aktuell      = 1000
-av_morgen_start = 1001
-av_morgen_ende  = 1024
-av_status       = 1025
+bv_status       = 1025
 
-# Nachher (deine echten AV-Nummern):
+# Nachher (deine echten Instanznummern):
 av_aktuell      = 5000
-av_morgen_start = 5001
-av_morgen_ende  = 5024
-av_status       = 5025
+bv_status       = 5025
 ```
 
 ---
@@ -139,8 +128,8 @@ cd D:\Projekte\Strompreis-Gateway
 - [ ] `config/einstellungen.ini` geöffnet
 - [ ] `controller_ip` durch echte Controller-IP ersetzt
 - [ ] `local_ip` durch echte PC-IP ersetzt
-- [ ] 26 Analog Values im Controller angelegt
-- [ ] `av_aktuell`, `av_morgen_start`, `av_morgen_ende`, `av_status` angepasst
+- [ ] 1 Analog Value und 1 Binary Value im Controller angelegt
+- [ ] `av_aktuell` und `bv_status` angepasst
 - [ ] Datei gespeichert
 - [ ] Verbindungstest ausgeführt: `python src/verbindungstest.py`
 
