@@ -7,6 +7,13 @@
 - [x] BACnet-fähiger Controller (z.B. Delta Controls EBcon)
 - [x] Beide Geräte im selben Netzwerk-Subnetz
 
+### IPC-Minimum
+- [x] Windows-Rechner oder IPC mit Administratorrechten
+- [x] Feste oder reservierte IP-Adresse im selben Subnetz wie der Controller
+- [x] Freier lokaler UDP-Port für BACnet, standardmäßig `47809`
+- [x] Freigegebene Windows-Firewall für den gewählten UDP-Port
+- [x] Eine freie AV- und BV-Instanznummer im Controller
+
 ### Software auf dem PC
 - [x] Python 3.10 oder neuer
   - Download: https://www.python.org/downloads/

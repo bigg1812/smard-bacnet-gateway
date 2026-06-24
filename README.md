@@ -61,6 +61,19 @@ python src/strompreis_bacnet.py
 | Netzwerk               | PC und Controller im selben Subnetz |
 | Internet               | Für SMARD-API (HTTPS)           |
 
+## IPC-Voraussetzungen
+
+Wenn du das Projekt auf einem IPC oder Industrie-PC betreiben willst, braucht der Rechner:
+
+- Eine Windows-Installation mit Administratorrechten für die Einrichtung
+- Netzwerkzugang zum BACnet-Controller
+- Eine feste oder reservierte IP-Adresse im selben Subnetz wie der Controller
+- Einen freien lokalen UDP-Port für BACnet, standardmäßig `47809`
+- Python 3.10 oder neuer
+- Eine freigegebene Firewall-Regel für den gewählten UDP-Port
+
+Zusätzlich muss im BACnet-Controller eine freie AV- und BV-Instanznummer angelegt werden. Diese Werte trägst du in `config/einstellungen.ini` ein.
+
 ## Projektstruktur
 
 ```
