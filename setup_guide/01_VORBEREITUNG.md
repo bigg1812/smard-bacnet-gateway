@@ -20,6 +20,51 @@
   - Bei der Installation: **"Add Python to PATH"** anhaken!
 - [x] Internetzugang (für die SMARD-API)
 
+### Schnelltest: Habe ich Python?
+
+Öffne die **Eingabeaufforderung** (CMD) und tippe die Befehle **genau so** ein:
+
+```cmd
+python --version
+```
+
+Erwartung:
+- Gut: `Python 3.10.x`, `Python 3.11.x` oder neuer
+- Schlecht: `python is not recognized` oder eine sehr alte Version
+
+Wenn das nicht klappt, probiere:
+
+```cmd
+py --version
+where python
+where py
+```
+
+So kannst du schnell erkennen:
+- `py --version` zeigt, ob der Python-Launcher installiert ist
+- `where python` zeigt, ob Windows Python im Suchpfad findet
+- `where py` zeigt, ob der Launcher verfügbar ist
+
+Wenn du `python` oder `py` gar nicht findest, installiere Python neu von
+https://www.python.org/downloads/ und aktiviere dabei **"Add Python to PATH"**.
+
+### Schnelltest: Welche Python-Version habe ich?
+
+Wenn Python gefunden wird, prüfe die genaue Version:
+
+```cmd
+python --version
+```
+
+oder alternativ:
+
+```cmd
+py --version
+```
+
+Für dieses Projekt brauchst du **Python 3.10 oder neuer**.
+Wenn dort `Python 3.9.x` oder älter steht, bitte erst aktualisieren.
+
 ### Informationen die du brauchst
 Notiere folgende Daten – du wirst sie bei der Einrichtung brauchen:
 

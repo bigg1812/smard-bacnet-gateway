@@ -22,6 +22,31 @@ cd C:\smard-bacnet-gateway
 Eine virtuelle Umgebung hält die Python-Pakete getrennt vom
 System. Das verhindert Konflikte.
 
+### Vorher prüfen: Funktioniert Python wirklich?
+
+Bevor du die virtuelle Umgebung erstellst, prüfe in CMD noch einmal:
+
+```cmd
+python --version
+```
+
+Falls das nicht funktioniert:
+
+```cmd
+py --version
+where python
+where py
+```
+
+Erwartung:
+- Mindestens `Python 3.10`
+- `where python` oder `where py` zeigt einen gültigen Pfad
+
+Wenn `python` nicht gefunden wird, ist meistens eines davon die Ursache:
+- Python ist noch nicht installiert
+- Beim Installieren wurde **"Add Python to PATH"** nicht aktiviert
+- Du musst die Eingabeaufforderung nach der Installation neu öffnen
+
 ```
 python -m venv venv
 ```
@@ -40,6 +65,10 @@ aktiv sein wenn du das Skript ausführst.**
 ```
 pip install -r requirements.txt
 ```
+
+Wenn hier ein Fehler wegen `python` oder `pip` kommt, dann ist Python
+noch nicht korrekt eingerichtet. In diesem Fall erst die Prüfschritte oben
+noch einmal durchgehen.
 
 Erwartete Ausgabe:
 ```
