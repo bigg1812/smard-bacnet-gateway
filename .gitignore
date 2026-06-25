@@ -27,3 +27,9 @@ desktop.ini
 # Konfiguration mit lokalen Anpassungen
 # (einstellungen.ini ist im Repo als Vorlage,
 #  lokale Aenderungen NICHT committen)
+
+# CSV Exporter logs und daten
+csv_version/logs/
+csv_version/config/*.csv
+wetter_version/logs/
+wetter_version/config/*.csv

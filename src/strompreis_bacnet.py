@@ -545,6 +545,11 @@ def main():
         default="alle",
         help="aktuell=AV:aktuell, morgen=BV:status (Preise für morgen da?), alle=beides (Standard)",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Nur Preise von SMARD laden und im Terminal anzeigen (kein BACnet)",
+    )
     args = parser.parse_args()
 
     log = setup_logging()
@@ -554,6 +559,23 @@ def main():
         f"Controller: {CFG['controller_ip']}:{CFG['controller_port']} | "
         f"{CFG['price_unit']} | {CFG['smard_region']}"
     )
+
+    if args.dry_run:
+        log.info("=== DRY-RUN MODUS: Keine BACnet-Uebertragung ===")
+        exit_code = 0
+        try:
+            if args.modus in ("aktuell", "alle"):
+                log.info("── Aktuellen Preis abrufen ──")
+                get_current_price(log)
+            if args.modus in ("morgen", "alle"):
+                log.info("── Status der Morgen-Preise pruefen ──")
+                get_tomorrow_prices(log)
+            log.info("Dry-Run erfolgreich beendet.")
+        except Exception as e:
+            log.error(f"Fehler im Dry-Run: {e}")
+            exit_code = 99
+        log.info("=" * 55)
+        return exit_code
 
     exit_code = 0
     try:
