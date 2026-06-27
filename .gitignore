@@ -7,9 +7,15 @@ venv/
 .venv/
 env/
 
-# Logs (werden lokal erzeugt, nicht ins Repo)
-logs/*.log
-logs/*.log.*
+# Logs (werden lokal erzeugt, nicht ins Repo) - in jeder Methode/Extra
+**/logs/*.log
+**/logs/*.log.*
+
+# CSV-Ausgaben der Exporter
+**/config/*.csv
+
+# Debug-Ausgabe der Scheduled Tasks
+**/task_debug.log
 
 # IDE
 .vscode/
@@ -24,12 +30,5 @@ desktop.ini
 # macOS
 .DS_Store
 
-# Konfiguration mit lokalen Anpassungen
-# (einstellungen.ini ist im Repo als Vorlage,
-#  lokale Aenderungen NICHT committen)
-
-# CSV Exporter logs und daten
-csv_version/logs/
-csv_version/config/*.csv
-wetter_version/logs/
-wetter_version/config/*.csv
+# Hinweis: einstellungen.ini liegt als VORLAGE im Repo (mit Platzhaltern).
+# Echte Zugangsdaten/IP NICHT committen.
