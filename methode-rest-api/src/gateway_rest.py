@@ -28,8 +28,8 @@ from pathlib import Path
 from sources import smard, openmeteo
 from enteliweb import EnteliwebClient
 
-# Repo-Wurzel: diese Datei liegt unter src/rest_api/, also drei Ebenen hoch.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# Methoden-Wurzel: diese Datei liegt unter <methode>/src/, also zwei Ebenen hoch.
+BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_FILE = BASE_DIR / "config" / "einstellungen.ini"
 LOG_FILE = BASE_DIR / "logs" / "gateway_rest.log"
 

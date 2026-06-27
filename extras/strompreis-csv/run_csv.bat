@@ -1,13 +1,13 @@
 @echo off
-title Wetterprognose CSV-Exporter
+title SMARD Strompreis CSV-Exporter
 cd /d "%~dp0"
 
 echo =======================================================
-echo  Wetterprognose CSV-Exporter ausfuehren...
+echo  SMARD Strompreis CSV-Exporter ausfuehren...
 echo =======================================================
 echo.
 
-..\venv\Scripts\python.exe src\wetter_prognose_csv.py
+python src\strompreis_csv.py
 
 echo.
 echo =======================================================

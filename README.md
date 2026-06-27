@@ -1,176 +1,73 @@
 # SMARD-BACnet Gateway
 
-**Strompreise aus dem Internet direkt in die Gebäudeautomation bringen.**
+**Strompreise (und Wetter) aus dem Internet in die Gebäudeautomation bringen.**
 
-Dieses Tool holt automatisch **Day-Ahead Strompreise** von der
-öffentlichen API der Bundesnetzagentur (SMARD) und schreibt sie
-via **BACnet/IP** in einen Gebäudeautomations-Controller.
+Dieses Projekt holt automatisch **Day-Ahead-Strompreise** von der öffentlichen
+API der Bundesnetzagentur (**SMARD**) – optional auch Wetterdaten von
+**Open-Meteo** – und schreibt die Werte in **BACnet-Objekte** eines
+Gebäudeautomations-Controllers.
 
-```
-                                          ┌─────────────────┐
- ┌────────────┐   Internet    ┌────────┐  │  BACnet         │
- │  SMARD API │ ─────────────►│ Python │──│  Controller     │
- │  (Bundes-  │  Strompreise  │ Skript │  │  (z.B. EBcon)   │
- │  netzagen- │  EUR/MWh      │        │  │                 │
- │  tur)      │               │  PC    │  │  AV:1000 = 11.67│
- └────────────┘               └────────┘  │  BV:1025 = 1    │
-                                          └─────────────────┘
-```
+Es gibt **zwei Methoden**, das ins BACnet zu schreiben. Wähle **eine** davon
+aus – jede liegt in einem eigenen Ordner mit eigener Konfiguration:
 
-## Was macht das Tool?
+| Methode | Ordner | Wann nutzen? |
+|---|---|---|
+| **A – BACnet/IP direkt** | [`methode-bacnet-direkt/`](methode-bacnet-direkt/) | Du sprichst den Controller **direkt** per BACnet/IP (UDP, Port 47808) an. Kein enteliWEB nötig. |
+| **B – enteliWEB REST-API** | [`methode-rest-api/`](methode-rest-api/) | Du schreibst über die **enteliWEB Web-API** (HTTP). Kein direktes BACnet/IP nötig, dafür enteliWEB mit lizenzierter API. Unterstützt zusätzlich Wetter. |
 
-1. **Ruft Strompreise ab** von der SMARD-Plattform der Bundesnetzagentur
-2. **Schreibt den aktuellen Preis** in ein konfigurierbares Analog Value (z.B. `AV:1000`)
-3. **Schreibt den Status für morgen** (ob Preise für morgen vorliegen und das System ok ist) in ein Binary Value (z.B. `BV:1025`)
+> **Kurz:** Hast du enteliWEB mit Web-API? → **Methode B**.
+> Willst/must du direkt aufs BACnet/IP-Netz? → **Methode A**.
 
-Die Preise stehen dann im Controller für Steuerungsprogramme zur
-Verfügung – z.B. um ein BHKW, Wärmepumpen oder Batteriespeicher zu optimieren.
+Beide Methoden sind **unabhängig** voneinander – du brauchst nur den Ordner der
+gewählten Methode. Jede hat ihre eigene `README.md` mit Schritt-für-Schritt-Anleitung.
+
+---
 
 ## Schnellstart
 
-> **Detaillierte Anleitung mit Screenshots:**
-> Siehe [`setup_guide/`](setup_guide/01_VORBEREITUNG.md)
+1. **Python 3.10+** installieren.
+2. Abhängigkeiten installieren:
+   ```cmd
+   python -m pip install -r requirements.txt
+   ```
+   (Im Firmennetz mit TLS-Proxy zusätzlich: `python -m pip install pip-system-certs`)
+3. Methode wählen, in deren Ordner wechseln und die dortige **`README.md`** befolgen:
+   - `methode-bacnet-direkt/` → BACnet/IP direkt
+   - `methode-rest-api/` → enteliWEB REST-API
 
-```powershell
-# 1. Repository herunterladen
-git clone https://github.com/DEIN-NAME/smard-bacnet-gateway.git
-cd smard-bacnet-gateway
-
-# 2. Python-Umgebung einrichten
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-
-# 3. Konfiguration anpassen (IP-Adressen und AV-Nummern!)
-notepad config\einstellungen.ini
-
-# 4. Verbindung testen
-python src/verbindungstest.py
-
-# 5. Strompreise abrufen
-python src/strompreis_bacnet.py
-```
-
-## Voraussetzungen
-
-| Was                    | Mindestanforderung              |
-|------------------------|---------------------------------|
-| Betriebssystem         | Windows 10/11 oder Windows Server |
-| Python                 | 3.10 oder neuer                 |
-| Controller             | Jeder BACnet/IP Controller      |
-| Netzwerk               | PC und Controller im selben Subnetz |
-| Internet               | Für SMARD-API (HTTPS)           |
-
-## IPC-Voraussetzungen
-
-Wenn du das Projekt auf einem IPC oder Industrie-PC betreiben willst, braucht der Rechner:
-
-- Eine Windows-Installation mit Administratorrechten für die Einrichtung
-- Netzwerkzugang zum BACnet-Controller
-- Eine feste oder reservierte IP-Adresse im selben Subnetz wie der Controller
-- Einen freien lokalen UDP-Port für BACnet, standardmäßig `47809`
-- Python 3.10 oder neuer
-- Eine freigegebene Firewall-Regel für den gewählten UDP-Port
-
-Zusätzlich muss im BACnet-Controller eine freie AV- und BV-Instanznummer angelegt werden. Diese Werte trägst du in `config/einstellungen.ini` ein.
+---
 
 ## Projektstruktur
 
 ```
 smard-bacnet-gateway/
-├── README.md                   ← Diese Datei
-├── LICENSE                     ← MIT Lizenz
-├── requirements.txt            ← Python-Abhängigkeiten
-├── config/
-│   └── einstellungen.ini       ← Alle Einstellungen (MUSS angepasst werden!)
-├── src/
-│   ├── strompreis_bacnet.py    ← Hauptskript
-│   └── verbindungstest.py      ← Verbindungstest
-├── setup_guide/
-│   ├── 01_VORBEREITUNG.md      ← Was du brauchst
-│   ├── 02_INSTALLATION.md      ← Schritt-für-Schritt Installation
-│   ├── 03_CONTROLLER_EINRICHTEN.md ← AVs im Controller anlegen
-│   ├── 04_ERSTER_TEST.md       ← Testen ob alles funktioniert
-│   └── 05_AUTOMATISIERUNG.md   ← Windows Task einrichten
-└── logs/
-    └── strompreis.log          ← Wird automatisch erstellt
+├─ methode-bacnet-direkt/     Methode A: BACnet/IP direkt (UDP)
+│  ├─ config/einstellungen.ini
+│  └─ src/  (strompreis_bacnet.py, verbindungstest.py)
+│
+├─ methode-rest-api/          Methode B: enteliWEB REST-API
+│  ├─ config/einstellungen.ini
+│  └─ src/  (gateway_rest.py, enteliweb.py, sources/)
+│
+├─ extras/                    Optionale CSV-Exporter (kein BACnet)
+│  ├─ strompreis-csv/
+│  └─ wetter-csv/
+│
+├─ docs/                      Ausführliche Doku & Setup-Guide
+└─ requirements.txt           Gemeinsame Python-Abhängigkeiten
 ```
 
-## Konfiguration
+---
 
-> **⚠️ WICHTIG:** Vor der ersten Nutzung **MUSS** die Datei [`config/einstellungen.ini`](config/einstellungen.ini) angepasst werden!
-> 
-> **📖 Detaillierte Schritt-für-Schritt-Anleitung:** [KONFIGURATION.md](KONFIGURATION.md)
+## Wichtige Hinweise
 
-Die Konfigurationsdatei enthält Platzhalter, die du durch deine echten Werte ersetzen musst:
-
-```ini
-[netzwerk]
-controller_ip = 192.168.1.100   ← Ersetze durch IP deines Controllers
-local_ip      = 192.168.1.50    ← Ersetze durch IP deines PCs
-
-[bacnet_objekte]
-av_aktuell      = 1000          ← Ersetze durch deine AV-Instanznummer
-bv_status       = 1025          ← Ersetze durch deine BV-Instanznummer
-
-[einheiten]
-faktor = 0.1                    ← 0.1 = ct/kWh, 1.0 = EUR/MWh
-```
-
-**Du benötigst:**
-- ✅ Die IP-Adresse deines BACnet-Controllers
-- ✅ Die IP-Adresse des PCs auf dem das Skript läuft
-- ✅ 1 freie AV-Instanznummer und 1 freie BV-Instanznummer im Controller
-
-**Wo finde ich diese Informationen?** → Siehe [KONFIGURATION.md](KONFIGURATION.md)
-
-## SMARD-Datenquelle
-
-Die Daten stammen von [SMARD](https://www.smard.de) – der
-Strommarkt-Plattform der Bundesnetzagentur. Die API ist
-**öffentlich zugänglich**, kostenlos und benötigt **keinen API-Key**.
-
-### Verfügbare Daten (Auszug)
-
-| Typ              | Filter-ID | Beschreibung              |
-|------------------|-----------|---------------------------|
-| **Strompreise**  |           |                           |
-|                  | 4169      | Day-Ahead Großhandelspreis|
-|                  | 5078      | Intraday Durchschnitt     |
-| **Erzeugung**    |           |                           |
-|                  | 4068      | Photovoltaik              |
-|                  | 4067      | Wind Onshore              |
-|                  | 1225      | Wind Offshore             |
-|                  | 4071      | Erdgas                    |
-| **Verbrauch**    |           |                           |
-|                  | 410       | Netzlast (Gesamt)         |
-|                  | 4359      | Residuallast              |
-
-Die vollständige Liste steht in der `einstellungen.ini`.
-
-## Fehlerbehebung
-
-| Symptom | Ursache | Lösung |
-|---------|---------|--------|
-| Verbindungstest: Timeout | Firewall | [Schritt 4](setup_guide/04_ERSTER_TEST.md) |
-| "Keine Preise für morgen" | Vor 13:00 ausgeführt | Um 13:30 nochmal starten |
-| Port belegt | Vorherige Instanz läuft | Prozess beenden oder Port ändern |
-| AV ändert sich nicht | Höhere Priority aktiv | Priority Array im Controller prüfen |
-| Preis = -1.0 im Controller | Kein SMARD-Preis für diese Stunde | Normal an manchen Feiertagen |
+- **Konfiguration:** Jede `config/einstellungen.ini` ist eine **Vorlage mit
+  Platzhaltern**. Trage deine echten Werte ein – aber **committe keine echten
+  Zugangsdaten/IP-Adressen** (steht so in der `.gitignore`-Notiz).
+- **Automatisierung** (alle 15 Min / stündlich) per Windows-Aufgabenplanung:
+  siehe [`docs/setup_guide/05_AUTOMATISIERUNG.md`](docs/setup_guide/05_AUTOMATISIERUNG.md)
+  und die README der jeweiligen Methode.
 
 ## Lizenz
 
-MIT License – siehe [LICENSE](LICENSE)
-
-## Datenquelle
-
-[SMARD – Strommarktdaten](https://www.smard.de)  
-Bundesnetzagentur, öffentlich zugänglich.
-
-## Anpassungen für dein Projekt
-
-Bevor du das Repository verwendest, passe folgende Dateien an:
-
-1. **`config/einstellungen.ini`** – Alle IP-Adressen und AV-Nummern
-2. **`setup_guide/02_INSTALLATION.md`** – Pfade falls du einen anderen Installationsort wählst
-3. **`setup_guide/05_AUTOMATISIERUNG.md`** – Task Scheduler Pfade anpassen
+Siehe [LICENSE](LICENSE).
