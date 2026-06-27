@@ -81,6 +81,7 @@ def tasks_strompreis(cp, log):
         "filter_id": cp.getint("smard_api", "filter_id"),
         "region": cp.get("smard_api", "region"),
         "timeout": cp.getint("smard_api", "timeout"),
+        "aufloesung": cp.get("smard_api", "aufloesung", fallback="hour"),
         "faktor": cp.getfloat("einheiten", "faktor"),
         "einheit": cp.get("einheiten", "einheit"),
     }
