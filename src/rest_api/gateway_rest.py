@@ -87,15 +87,23 @@ def tasks_strompreis(cp, log):
     }
     tasks = []
 
+    fehlwert = cp.getfloat("strompreis_objekte", "fehlwert", fallback=-1.0)
+
     # Aktueller Preis -> ein AV
     _, conv, _ = smard.get_current_price(cfg, log)
     obj_aktuell = cp.get("strompreis_objekte", "av_aktuell")
     tasks.append((obj_aktuell, conv, f"Strompreis aktuell ({cfg['einheit']})"))
 
+    # Optional: Preis in 24 Stunden -> ein AV
+    if cp.has_option("strompreis_objekte", "av_in_24h"):
+        obj_24h = cp.get("strompreis_objekte", "av_in_24h")
+        ergebnis = smard.get_price_in_hours(cfg, log, hours=24)
+        wert = ergebnis[1] if ergebnis is not None else fehlwert
+        tasks.append((obj_24h, wert, f"Strompreis in 24h ({cfg['einheit']})"))
+
     # Optional: 24 Stundenpreise fuer morgen -> 24 fortlaufende AVs
     if cp.has_option("strompreis_objekte", "av_morgen_basis"):
         basis = cp.getint("strompreis_objekte", "av_morgen_basis")
-        fehlwert = cp.getfloat("strompreis_objekte", "fehlwert", fallback=-1.0)
         for stunde, preis in smard.get_tomorrow_prices(cfg, log):
             wert = preis if preis is not None else fehlwert
             tasks.append((f"analog-value,{basis + stunde}", wert,
@@ -140,6 +148,8 @@ def ziel_objekte(cp):
     objekte = []
     if cp.has_option("strompreis_objekte", "av_aktuell"):
         objekte.append(("Strompreis aktuell", cp.get("strompreis_objekte", "av_aktuell")))
+    if cp.has_option("strompreis_objekte", "av_in_24h"):
+        objekte.append(("Strompreis in 24h", cp.get("strompreis_objekte", "av_in_24h")))
     if cp.has_option("strompreis_objekte", "av_morgen_basis"):
         basis = cp.getint("strompreis_objekte", "av_morgen_basis")
         # Stichprobe: erste und letzte Stunde reicht zum Pruefen des Bereichs
